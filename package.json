@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "server": "node server/server.js",
-    "build": "electron-builder",
+    "build": "echo 'Skipping build for server deployment'",
     "build:portable": "set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win portable",
     "build:installer": "set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win nsis"
   },

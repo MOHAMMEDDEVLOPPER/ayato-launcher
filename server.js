@@ -1,23 +1,45 @@
 // Express API Server for AYATO LAUNCHER
 const express = require('express');
 const cors = require('cors');
-const { DataManager } = require('./storage/data-manager.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Import DataManager with error handling
+let DataManager;
+try {
+  DataManager = require('./storage/data-manager.js').DataManager;
+} catch (error) {
+  console.error('⚠️ Error loading DataManager:', error.message);
+  // Create a dummy DataManager to prevent crashes
+  DataManager = {
+    initializeDefaultData: () => console.warn('DataManager not available'),
+    getGames: () => [],
+    getUsers: () => [],
+    getActivationCodes: () => [],
+    getUpdates: () => [],
+    getGiftCodes: () => [],
+    getServers: () => [],
+    getAnnouncements: () => []
+  };
+}
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Initialize default data (async to prevent blocking)
-setTimeout(() => {
+// Initialize default data (async to prevent blocking server startup)
+// This runs after server starts to ensure healthcheck works immediately
+setImmediate(() => {
   try {
+    console.log('📦 Initializing default data...');
     DataManager.initializeDefaultData();
+    console.log('✅ Default data initialized successfully');
   } catch (error) {
-    console.error('Error initializing default data:', error);
+    console.error('⚠️ Error initializing default data (non-critical):', error.message);
+    // Don't throw - server can run without default data
   }
-}, 1000);
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -387,10 +409,30 @@ app.post('/api/announcements', (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
+// Start server with error handling
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 AYATO LAUNCHER API Server running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`📚 API endpoints: http://localhost:${PORT}/api/*`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+    process.exit(1);
+  }
+});
+
+// Handle process errors
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  // Don't exit - let the server continue
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error('❌ Unhandled Rejection:', error);
+  // Don't exit - let the server continue
 });
 
