@@ -5,12 +5,28 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Import DataManager with error handling
+// Health check endpoint - MUST be registered FIRST, before any middleware or data loading
+// This ensures Railway can verify the server is running immediately
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'AYATO LAUNCHER API is running',
+    timestamp: Date.now()
+  });
+});
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Import DataManager with error handling (after health endpoint)
 let DataManager;
 try {
   DataManager = require('./storage/data-manager.js').DataManager;
+  console.log('✅ DataManager loaded successfully');
 } catch (error) {
   console.error('⚠️ Error loading DataManager:', error.message);
+  console.error('Stack:', error.stack);
   // Create a dummy DataManager to prevent crashes
   DataManager = {
     initializeDefaultData: () => console.warn('DataManager not available'),
@@ -24,10 +40,6 @@ try {
   };
 }
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
 // Initialize default data (async to prevent blocking server startup)
 // This runs after server starts to ensure healthcheck works immediately
 setImmediate(() => {
@@ -37,13 +49,9 @@ setImmediate(() => {
     console.log('✅ Default data initialized successfully');
   } catch (error) {
     console.error('⚠️ Error initializing default data (non-critical):', error.message);
+    console.error('Stack:', error.stack);
     // Don't throw - server can run without default data
   }
-});
-
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'AYATO LAUNCHER API is running' });
 });
 
 // ==================== GAMES ENDPOINTS ====================
@@ -410,29 +418,50 @@ app.post('/api/announcements', (req, res) => {
 });
 
 // Start server with error handling
+console.log('🚀 Starting server...');
+console.log(`📍 Port: ${PORT}`);
+console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 AYATO LAUNCHER API Server running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`📚 API endpoints: http://localhost:${PORT}/api/*`);
+  console.log(`✅ Server is listening on port ${PORT}`);
+  console.log(`📍 Health check: http://0.0.0.0:${PORT}/health`);
+  console.log(`📚 API endpoints: http://0.0.0.0:${PORT}/api/*`);
+  console.log(`🌐 Server ready for requests!`);
 });
 
 // Handle server errors
 server.on('error', (error) => {
   console.error('❌ Server error:', error);
+  console.error('Error code:', error.code);
+  console.error('Error message:', error.message);
   if (error.code === 'EADDRINUSE') {
     console.error(`Port ${PORT} is already in use`);
     process.exit(1);
+  } else {
+    // For other errors, log but don't exit - Railway will handle it
+    console.error('Server error occurred, but continuing...');
   }
 });
 
 // Handle process errors
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
-  // Don't exit - let the server continue
+  console.error('Stack:', error.stack);
+  // Don't exit - let the server continue (Railway will restart if needed)
 });
 
 process.on('unhandledRejection', (error) => {
   console.error('❌ Unhandled Rejection:', error);
+  console.error('Stack:', error.stack);
   // Don't exit - let the server continue
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
 
