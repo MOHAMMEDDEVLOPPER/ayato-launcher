@@ -196,62 +196,83 @@ class DataManager {
 
   // تهيئة البيانات الافتراضية
   static initializeDefaultData() {
-    // المستخدمين
-    if (!this.getUsers().length) {
-      this.saveUsers([
-        {
-          id: 'AYT-PKJK7IIK',
-          username: 'AYATO',
-          email: 'admin@ayato.com',
-          password: '', // سيتم تعيينه عند تسجيل الدخول
-          activationCode: 'AYATO-CODE:123456789012',
-          isActivated: true,
-          isVerified: true,
-          isAdmin: true,
-          coins: 0,
-          activeServer: null,
-          twoFactorEnabled: false,
-          twoFactorSecret: null,
-          createdAt: Date.now()
+    try {
+      // المستخدمين
+      if (!this.getUsers().length) {
+        try {
+          this.saveUsers([
+            {
+              id: 'AYT-PKJK7IIK',
+              username: 'AYATO',
+              email: 'admin@ayato.com',
+              password: '', // سيتم تعيينه عند تسجيل الدخول
+              activationCode: 'AYATO-CODE:123456789012',
+              isActivated: true,
+              isVerified: true,
+              isAdmin: true,
+              coins: 0,
+              activeServer: null,
+              twoFactorEnabled: false,
+              twoFactorSecret: null,
+              createdAt: Date.now()
+            }
+          ]);
+          console.log('👤 Default users saved');
+        } catch (e) {
+          console.error('❌ Users init failed:', e.message);
         }
-      ]);
-    }
+      }
 
-    // أكواد التفعيل
-    if (!this.getActivationCodes().length) {
-      this.saveActivationCodes([
-        {
-          code: 'AYATO-CODE:123456789012',
-          type: 'PUB',
-          linkedUserId: null,
-          expiryDate: null,
-          isValid: true
-        },
-        {
-          code: 'AYATO-CODE:PRIV78901234',
-          type: 'PRIVATE',
-          linkedUserId: null,
-          expiryDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
-          isValid: true
+      // أكواد التفعيل
+      if (!this.getActivationCodes().length) {
+        try {
+          this.saveActivationCodes([
+            {
+              code: 'AYATO-CODE:123456789012',
+              type: 'PUB',
+              linkedUserId: null,
+              expiryDate: null,
+              isValid: true
+            },
+            {
+              code: 'AYATO-CODE:PRIV78901234',
+              type: 'PRIVATE',
+              linkedUserId: null,
+              expiryDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
+              isValid: true
+            }
+          ]);
+          console.log('🔑 Default activation codes saved');
+        } catch (e) {
+          console.error('❌ Activation codes init failed:', e.message);
         }
-      ]);
-    }
+      }
 
-    // الإعلانات
-    if (!this.getAnnouncements().length) {
-      this.saveAnnouncements([
-        {
-          id: 'announcement-1',
-          title: 'Welcome to AYATO LAUNCHER',
-          description: 'Thank you for using AYATO LAUNCHER!',
-          timestamp: Date.now(),
-          type: 'news',
-          author: 'AYATO Team'
+      // الإعلانات
+      if (!this.getAnnouncements().length) {
+        try {
+          this.saveAnnouncements([
+            {
+              id: 'announcement-1',
+              title: 'Welcome to AYATO LAUNCHER',
+              description: 'Thank you for using AYATO LAUNCHER!',
+              timestamp: Date.now(),
+              type: 'news',
+              author: 'AYATO Team'
+            }
+          ]);
+          console.log('📢 Default announcements saved');
+        } catch (e) {
+          console.error('❌ Announcements init failed:', e.message);
         }
-      ]);
-    }
+      }
 
-    console.log('✅ Default data initialized');
+      console.log('✅ Default data initialized');
+      console.log('📦 Default data initialized successfully');
+    } catch (error) {
+      console.error('❌ initializeDefaultData error:', error.message);
+      console.error('❌ initializeDefaultData stack:', error.stack);
+    }
   }
 }
 

@@ -13,7 +13,12 @@ const DATA_PATH = path.join(__dirname, '..', '.data');
 // إنشاء المجلد إذا لم يكن موجوداً
 if (!fs.existsSync(DATA_PATH)) {
   fs.mkdirSync(DATA_PATH, { recursive: true });
+  console.log('📁 Created data directory:', DATA_PATH);
+} else {
+  console.log('📁 Data directory exists:', DATA_PATH);
 }
+
+console.log('🔒 EncryptedStorage initialized at:', DATA_PATH);
 
 class EncryptedStorage {
   // تشفير النص

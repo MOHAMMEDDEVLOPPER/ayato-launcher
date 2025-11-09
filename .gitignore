@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+package-lock.json
+
+# Server data
+server/.data/
+server/storage/*.dat
+*.dat
+.env
+.env.local
+

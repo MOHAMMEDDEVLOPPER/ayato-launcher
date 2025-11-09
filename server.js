@@ -1,6 +1,16 @@
 // Express API Server for AYATO LAUNCHER
+console.log('🚀 AYATO LAUNCHER API - Startup Sequence');
+console.log('📂 Working Directory:', process.cwd());
+console.log('📁 This File:', __filename);
+console.log('🖥️  Platform:', process.platform);
+console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
+console.log('📦 Node Version:', process.version);
+
 const express = require('express');
+console.log('✅ Loaded: express');
+
 const cors = require('cors');
+console.log('✅ Loaded: cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,18 +25,48 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Debug endpoint for troubleshooting
+app.get('/debug', (req, res) => {
+  try {
+    const { EncryptedStorage } = require('./storage/encrypted-storage.js');
+    const dataPath = require('path').join(__dirname, '..', '.data');
+    const fs = require('fs');
+    
+    res.json({
+      status: 'debug',
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      cwd: process.cwd(),
+      dataPath: dataPath,
+      dataPathExists: fs.existsSync(dataPath),
+      timestamp: Date.now(),
+      nodeVersion: process.version,
+      platform: process.platform,
+      env: process.env.NODE_ENV || 'development',
+      port: PORT
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Import DataManager with error handling (after health endpoint)
+console.log('📦 Attempting DataManager load...');
 let DataManager;
 try {
   DataManager = require('./storage/data-manager.js').DataManager;
   console.log('✅ DataManager loaded successfully');
 } catch (error) {
-  console.error('⚠️ Error loading DataManager:', error.message);
-  console.error('Stack:', error.stack);
+  console.error('❌ DataManager Error:', error.message);
+  console.error('❌ DataManager Stack:', error.stack);
   // Create a dummy DataManager to prevent crashes
   DataManager = {
     initializeDefaultData: () => console.warn('DataManager not available'),
@@ -36,20 +76,39 @@ try {
     getUpdates: () => [],
     getGiftCodes: () => [],
     getServers: () => [],
-    getAnnouncements: () => []
+    getAnnouncements: () => [],
+    getGameById: () => null,
+    getUserById: () => null,
+    getActivationCodeByCode: () => null,
+    getGiftCodeByCode: () => null,
+    addGame: () => false,
+    addUser: () => false,
+    updateGame: () => false,
+    updateUser: () => false,
+    deleteGame: () => false,
+    deleteUser: () => false,
+    addActivationCode: () => false,
+    deleteActivationCode: () => false,
+    addUpdate: () => false,
+    deleteUpdate: () => false,
+    addGiftCode: () => false,
+    deleteGiftCode: () => false,
+    saveAnnouncements: () => false
   };
 }
 
 // Initialize default data (async to prevent blocking server startup)
 // This runs after server starts to ensure healthcheck works immediately
 setImmediate(() => {
+  console.log('🔄 Initializing data...');
   try {
     console.log('📦 Initializing default data...');
     DataManager.initializeDefaultData();
+    console.log('✅ Data init complete');
     console.log('✅ Default data initialized successfully');
   } catch (error) {
-    console.error('⚠️ Error initializing default data (non-critical):', error.message);
-    console.error('Stack:', error.stack);
+    console.error('❌ Data init failed:', error.message);
+    console.error('❌ Data init stack:', error.stack);
     // Don't throw - server can run without default data
   }
 });
@@ -428,6 +487,9 @@ console.log(`📍 Working directory: ${process.cwd()}`);
 // Start listening immediately - this is critical for Railway health checks
 // The health endpoint is already registered at the top of the file, so it will be available immediately
 const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🔌 Listening on 0.0.0.0:${PORT}`);
+  console.log(`🩺 Health endpoint ready: http://0.0.0.0:${PORT}/health`);
+  console.log(`🐛 Debug endpoint ready: http://0.0.0.0:${PORT}/debug`);
   console.log(`✅ Server is listening on port ${PORT}`);
   console.log(`📍 Health check: http://0.0.0.0:${PORT}/health`);
   console.log(`📚 API endpoints: http://0.0.0.0:${PORT}/api/*`);
@@ -450,10 +512,11 @@ server.on('error', (error) => {
 });
 
 // Handle process errors
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-  console.error('Stack:', error.stack);
-  // Don't exit - let the server continue (Railway will restart if needed)
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err.message);
+  console.error('💥 Stack:', err.stack);
+  // Exit on uncaught exception to prevent undefined behavior
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (error) => {
