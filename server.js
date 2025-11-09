@@ -10,12 +10,18 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Initialize default data
-DataManager.initializeDefaultData();
+// Initialize default data (async to prevent blocking)
+setTimeout(() => {
+  try {
+    DataManager.initializeDefaultData();
+  } catch (error) {
+    console.error('Error initializing default data:', error);
+  }
+}, 1000);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'AYATO LAUNCHER API is running' });
+  res.status(200).json({ status: 'ok', message: 'AYATO LAUNCHER API is running' });
 });
 
 // ==================== GAMES ENDPOINTS ====================
