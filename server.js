@@ -421,12 +421,18 @@ app.post('/api/announcements', (req, res) => {
 console.log('🚀 Starting server...');
 console.log(`📍 Port: ${PORT}`);
 console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`📍 Node version: ${process.version}`);
+console.log(`📍 Platform: ${process.platform}`);
+console.log(`📍 Working directory: ${process.cwd()}`);
 
+// Start listening immediately - this is critical for Railway health checks
+// The health endpoint is already registered at the top of the file, so it will be available immediately
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server is listening on port ${PORT}`);
   console.log(`📍 Health check: http://0.0.0.0:${PORT}/health`);
   console.log(`📚 API endpoints: http://0.0.0.0:${PORT}/api/*`);
   console.log(`🌐 Server ready for requests!`);
+  console.log(`⏰ Server started at: ${new Date().toISOString()}`);
 });
 
 // Handle server errors
